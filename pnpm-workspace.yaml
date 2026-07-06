@@ -1,0 +1,9 @@
+packages:
+  - client
+  - server
+onlyBuiltDependencies:
+  - esbuild
+  - protobufjs
+allowBuilds:
+  esbuild: true
+  protobufjs: true
