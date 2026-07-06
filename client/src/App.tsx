@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithRedirect,
@@ -30,7 +31,7 @@ import {
   UploadCloud
 } from 'lucide-react';
 import { apiGet, apiJson, uploadMeeting, uploadPaymentProof } from './lib/api';
-import { auth, googleProvider } from './lib/firebase';
+import { auth, authReady, googleProvider } from './lib/firebase';
 import type { ActionItem, ActionStatus, EmailDraft, MeetingDetail, MeetingListItem, PaymentRequest, Priority, Usage } from './types';
 
 type View = 'dashboard' | 'upload' | 'meeting' | 'actions' | 'pro' | 'admin';
@@ -70,24 +71,39 @@ function ScoreBadge({ score }: { score: number | null }) {
   return <span className={`inline-flex min-w-16 items-center justify-center rounded-full px-3 py-1 text-sm font-bold ${color}`}>{label}</span>;
 }
 
-function AuthScreen() {
+function friendlyAuthError(error: unknown) {
+  const message = error instanceof Error ? error.message : 'Authentication failed.';
+  if (message.includes('auth/unauthorized-domain')) return 'This domain is not authorized in Firebase Auth. Add localhost and 127.0.0.1 in Firebase Console > Authentication > Settings > Authorized domains.';
+  if (message.includes('auth/popup') || message.includes('auth/cancelled-popup-request')) return 'Google sign-in was interrupted. Please try again.';
+  if (message.includes('auth/email-already-in-use')) return 'This email already has an account. Switch to Sign in.';
+  if (message.includes('auth/weak-password')) return 'Use a stronger password with at least 6 characters.';
+  if (message.includes('auth/invalid-credential')) return 'Email or password is incorrect.';
+  return message;
+}
+
+function AuthScreen({ initialMessage = '' }: { initialMessage?: string }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
+  useEffect(() => {
+    if (initialMessage) setMessage(initialMessage);
+  }, [initialMessage]);
+
   async function submit() {
     setBusy(true);
     setMessage('');
     try {
+      await authReady;
       if (mode === 'login') {
         await signInWithEmailAndPassword(auth, email, password);
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Authentication failed.');
+      setMessage(friendlyAuthError(error));
     } finally {
       setBusy(false);
     }
@@ -97,9 +113,10 @@ function AuthScreen() {
     setBusy(true);
     setMessage('');
     try {
+      await authReady;
       await signInWithRedirect(auth, googleProvider);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Google sign-in failed.');
+      setMessage(friendlyAuthError(error));
       setBusy(false);
     }
   }
@@ -938,18 +955,47 @@ function AdminPayments() {
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authMessage, setAuthMessage] = useState('');
   const [view, setView] = useState<View>('dashboard');
   const [meetingId, setMeetingId] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, setUser);
+    let mounted = true;
+    void authReady
+      .then(() => getRedirectResult(auth))
+      .catch((error) => {
+        if (mounted) setAuthMessage(friendlyAuthError(error));
+      });
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!mounted) return;
+      setUser(currentUser);
+      setAuthLoading(false);
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     localStorage.removeItem('meetflow-demo-session');
   }, []);
 
-  if (!user) return <AuthScreen />;
+  if (authLoading) {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#F8FAFC] p-6">
+        <div className="rounded-3xl bg-white p-8 text-center shadow-indigo">
+          <Waveform />
+          <p className="mt-4 font-black text-sidebar">Checking your session...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (!user) return <AuthScreen initialMessage={authMessage} />;
   const isAdmin = Boolean(user.email && adminEmails.has(user.email.toLowerCase()));
 
   function openMeeting(id: string) {
