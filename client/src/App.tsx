@@ -5,6 +5,7 @@ import {
   getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signInWithRedirect,
   signOut,
   type User
@@ -114,9 +115,19 @@ function AuthScreen({ initialMessage = '' }: { initialMessage?: string }) {
     setMessage('');
     try {
       await authReady;
-      await signInWithRedirect(auth, googleProvider);
+      await signInWithPopup(auth, googleProvider);
     } catch (error) {
-      setMessage(friendlyAuthError(error));
+      const message = error instanceof Error ? error.message : '';
+      if (message.includes('auth/popup-blocked') || message.includes('auth/popup-closed-by-user') || message.includes('auth/cancelled-popup-request')) {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectError) {
+          setMessage(friendlyAuthError(redirectError));
+        }
+      } else {
+        setMessage(friendlyAuthError(error));
+      }
       setBusy(false);
     }
   }
