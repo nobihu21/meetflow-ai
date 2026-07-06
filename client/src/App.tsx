@@ -419,9 +419,9 @@ function UploadMeeting({ openMeeting }: { openMeeting: (id: string) => void }) {
       <div className="mt-6 grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-indigo">
           <label className="text-sm font-black text-sidebar">Meeting title</label>
-          <input className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigoElectric focus:bg-white" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Client onboarding sync" />
+          <input className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigoElectric focus:bg-white" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Enter meeting title" />
           <label className="mt-5 block text-sm font-black text-sidebar">Participants</label>
-          <input className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigoElectric focus:bg-white" value={participants} onChange={(event) => setParticipants(event.target.value)} placeholder="Maaz, Ayesha, Omar" />
+          <input className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigoElectric focus:bg-white" value={participants} onChange={(event) => setParticipants(event.target.value)} placeholder="Add names or emails separated by commas" />
           <label className="mt-5 flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50 p-8 text-center transition hover:border-indigoElectric hover:bg-indigo-100">
             <FileAudio className="text-indigoElectric" size={34} />
             <span className="mt-3 font-black text-sidebar">{file ? file.name : 'Upload .txt or audio file'}</span>
@@ -453,7 +453,7 @@ function UploadMeeting({ openMeeting }: { openMeeting: (id: string) => void }) {
             <label className="font-black text-sidebar">Transcript</label>
             <span className="text-sm font-bold text-slate-500">{transcript.length} characters</span>
           </div>
-          <textarea className="min-h-[32rem] w-full rounded-2xl border border-slate-200 bg-white p-5 leading-7 shadow-indigo outline-none focus:border-indigoElectric" value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder={`Paste transcript here, for example:\n\nMaaz: We need to send the proposal by Friday.\nAyesha: I will update pricing and share it tomorrow.\nOmar: Should we include onboarding support in the first package?`} />
+          <textarea className="min-h-[32rem] w-full rounded-2xl border border-slate-200 bg-white p-5 leading-7 shadow-indigo outline-none focus:border-indigoElectric" value={transcript} onChange={(event) => setTranscript(event.target.value)} placeholder="Paste your meeting transcript here. Use the sample button only if you want to test the AI flow." />
         </div>
       </div>
     </section>
