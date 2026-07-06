@@ -589,6 +589,10 @@ app.use((error: unknown, _req: express.Request, res: express.Response, _next: ex
   return res.status(500).json({ error: message });
 });
 
-app.listen(env.PORT, () => {
-  console.log(`MeetFlow API running on http://localhost:${env.PORT} with Firebase`);
-});
+if (!process.env.VERCEL) {
+  app.listen(env.PORT, () => {
+    console.log(`MeetFlow API running on http://localhost:${env.PORT} with Firebase`);
+  });
+}
+
+export default app;
