@@ -1,7 +1,10 @@
 import admin from 'firebase-admin';
 import { env } from './env.js';
 
-const privateKey = env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+const privateKey = env.FIREBASE_PRIVATE_KEY
+  .trim()
+  .replace(/^["']|["']$/g, '')
+  .replace(/\\n/g, '\n');
 
 if (!admin.apps.length) {
   admin.initializeApp({

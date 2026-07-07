@@ -586,7 +586,10 @@ app.post('/api/admin/payment-requests/:id/reject', requireAuth, requireAdmin, as
 
 app.use((error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   const message = error instanceof Error ? error.message : 'Unexpected server error.';
-  return res.status(500).json({ error: message });
+  console.error(error);
+  return res.status(500).json({
+    error: process.env.NODE_ENV === 'production' ? 'Server request failed. Check deployment logs.' : message
+  });
 });
 
 if (!process.env.VERCEL) {
