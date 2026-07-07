@@ -35,6 +35,7 @@ export type OpenQuestion = {
 };
 
 export type MeetingDetail = MeetingListItem & {
+  deleted?: boolean;
   participants: string[] | null;
   summary: string | null;
   raw_transcript: string | null;

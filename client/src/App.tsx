@@ -520,7 +520,13 @@ function MeetingView({ meetingId, backToDashboard }: { meetingId: string; backTo
     setMeeting(null);
     apiGet<MeetingDetail>(`/api/meetings/${meetingId}`)
       .then((detail) => {
-        if (active) setMeeting(detail);
+        if (!active) return;
+        if (detail.deleted) {
+          setNotFound(true);
+          window.setTimeout(backToDashboard, 900);
+          return;
+        }
+        setMeeting(detail);
       })
       .catch((err) => {
         if (!active) return;
@@ -700,7 +706,8 @@ function ActionsBoard() {
       const detailResults = await Promise.allSettled(result.data.map((meeting) => apiGet<MeetingDetail>(`/api/meetings/${meeting.id}`)));
       const details = detailResults
         .filter((item): item is PromiseFulfilledResult<MeetingDetail> => item.status === 'fulfilled')
-        .map((item) => item.value);
+        .map((item) => item.value)
+        .filter((meeting) => !meeting.deleted);
       setActions(details.flatMap((meeting) => meeting.action_items));
     }).catch(() => setActions([]));
   }, []);

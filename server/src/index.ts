@@ -318,12 +318,42 @@ app.get('/api/meetings/:id', requireAuth, asyncHandler(async (req, res) => {
   const meetingDoc = await db.collection('meetings').doc(req.params.id).get();
 
   if (!meetingDoc.exists) {
-    return res.status(404).json({ error: 'Meeting not found.' });
+    return res.json({
+      id: req.params.id,
+      deleted: true,
+      title: 'Meeting not found',
+      meeting_date: null,
+      status: 'failed',
+      meeting_score: null,
+      created_at: new Date().toISOString(),
+      error_message: 'Meeting not found.',
+      participants: [],
+      summary: null,
+      raw_transcript: null,
+      action_items: [],
+      decisions: [],
+      open_questions: []
+    });
   }
 
   const meeting = serializeDoc(meetingDoc);
   if (meeting.user_id !== authedReq.user.id) {
-    return res.status(404).json({ error: 'Meeting not found.' });
+    return res.json({
+      id: req.params.id,
+      deleted: true,
+      title: 'Meeting not found',
+      meeting_date: null,
+      status: 'failed',
+      meeting_score: null,
+      created_at: new Date().toISOString(),
+      error_message: 'Meeting not found.',
+      participants: [],
+      summary: null,
+      raw_transcript: null,
+      action_items: [],
+      decisions: [],
+      open_questions: []
+    });
   }
 
   const children = await getMeetingChildren(req.params.id, authedReq.user.id);
