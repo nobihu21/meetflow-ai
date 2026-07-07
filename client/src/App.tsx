@@ -504,7 +504,7 @@ function ActionEditor({ action, onSaved }: { action: ActionItem; onSaved: (actio
   );
 }
 
-function MeetingView({ meetingId }: { meetingId: string }) {
+function MeetingView({ meetingId, backToDashboard }: { meetingId: string; backToDashboard: () => void }) {
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [tab, setTab] = useState<'actions' | 'decisions' | 'questions' | 'summary'>('actions');
   const [error, setError] = useState('');
@@ -584,7 +584,7 @@ function MeetingView({ meetingId }: { meetingId: string }) {
       <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-indigo">
         <h1 className="text-2xl font-black text-sidebar">Meeting not found</h1>
         <p className="mt-3 max-w-2xl leading-7 text-slate-600">This meeting may have been deleted or belongs to another workspace. Go back to the dashboard and select an available meeting.</p>
-        <button onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-indigoElectric px-5 py-3 font-black text-white shadow-indigo">Back to dashboard</button>
+        <button onClick={backToDashboard} className="mt-5 rounded-xl bg-indigoElectric px-5 py-3 font-black text-white shadow-indigo">Back to dashboard</button>
       </div>
     );
   }
@@ -1052,7 +1052,7 @@ export default function App() {
       <main className="w-full p-5 sm:p-8">
         {view === 'dashboard' && <Dashboard openMeeting={openMeeting} setView={setView} />}
         {view === 'upload' && <UploadMeeting openMeeting={openMeeting} />}
-        {view === 'meeting' && meetingId && <MeetingView meetingId={meetingId} />}
+        {view === 'meeting' && meetingId && <MeetingView meetingId={meetingId} backToDashboard={() => setView('dashboard')} />}
         {view === 'actions' && <ActionsBoard />}
         {view === 'pro' && <BillingPage />}
         {view === 'admin' && isAdmin && <AdminPayments />}
