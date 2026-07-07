@@ -508,12 +508,25 @@ function MeetingView({ meetingId }: { meetingId: string }) {
   const [meeting, setMeeting] = useState<MeetingDetail | null>(null);
   const [tab, setTab] = useState<'actions' | 'decisions' | 'questions' | 'summary'>('actions');
   const [error, setError] = useState('');
+  const [notFound, setNotFound] = useState(false);
   const [emailDraft, setEmailDraft] = useState<EmailDraft | null>(null);
   const [draftLoading, setDraftLoading] = useState(false);
   const [busyAction, setBusyAction] = useState('');
 
   useEffect(() => {
-    apiGet<MeetingDetail>(`/api/meetings/${meetingId}`).then(setMeeting).catch((err) => setError(err.message));
+    setError('');
+    setNotFound(false);
+    setMeeting(null);
+    apiGet<MeetingDetail>(`/api/meetings/${meetingId}`)
+      .then(setMeeting)
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : 'Meeting could not be loaded.';
+        if (message.toLowerCase().includes('not found')) {
+          setNotFound(true);
+          return;
+        }
+        setError(message);
+      });
   }, [meetingId]);
 
   function replaceAction(action: ActionItem) {
@@ -566,6 +579,15 @@ function MeetingView({ meetingId }: { meetingId: string }) {
     }
   }
 
+  if (notFound) {
+    return (
+      <div className="rounded-2xl border border-slate-200 bg-white p-8 shadow-indigo">
+        <h1 className="text-2xl font-black text-sidebar">Meeting not found</h1>
+        <p className="mt-3 max-w-2xl leading-7 text-slate-600">This meeting may have been deleted or belongs to another workspace. Go back to the dashboard and select an available meeting.</p>
+        <button onClick={() => window.location.reload()} className="mt-5 rounded-xl bg-indigoElectric px-5 py-3 font-black text-white shadow-indigo">Back to dashboard</button>
+      </div>
+    );
+  }
   if (error) return <div className="rounded-2xl bg-red-50 p-4 text-red-700">{error}</div>;
   if (!meeting) return <div className="flex items-center gap-4 rounded-2xl bg-white p-6 shadow-indigo"><Waveform /> Loading meeting...</div>;
 
@@ -666,7 +688,10 @@ function ActionsBoard() {
   useEffect(() => {
     apiGet<{ data: MeetingListItem[] }>('/api/meetings?limit=50').then(async (result) => {
       setMeetings(result.data);
-      const details = await Promise.all(result.data.map((meeting) => apiGet<MeetingDetail>(`/api/meetings/${meeting.id}`)));
+      const detailResults = await Promise.allSettled(result.data.map((meeting) => apiGet<MeetingDetail>(`/api/meetings/${meeting.id}`)));
+      const details = detailResults
+        .filter((item): item is PromiseFulfilledResult<MeetingDetail> => item.status === 'fulfilled')
+        .map((item) => item.value);
       setActions(details.flatMap((meeting) => meeting.action_items));
     }).catch(() => setActions([]));
   }, []);
