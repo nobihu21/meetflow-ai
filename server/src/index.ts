@@ -279,7 +279,16 @@ app.post('/api/meetings/upload', upload.single('file'), asyncHandler(async (req,
       status: 'failed',
       error_message: message
     });
-    return res.status(500).json({ id: meetingRef.id, error: "Couldn't process this transcript, please try again." });
+    console.error('Meeting processing failed', {
+      meetingId: meetingRef.id,
+      userId: authedReq.user.id,
+      message
+    });
+    return res.status(201).json({
+      id: meetingRef.id,
+      status: 'failed',
+      error: "Couldn't process this transcript, please open the meeting and retry."
+    });
   }
 }));
 

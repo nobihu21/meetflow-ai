@@ -639,6 +639,12 @@ function MeetingView({ meetingId, backToDashboard }: { meetingId: string; backTo
           </button>
         </div>
       </div>
+      {meeting.status === 'failed' && (
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800">
+          <p className="font-black">Processing did not complete.</p>
+          <p className="mt-1 text-sm leading-6">{meeting.error_message || 'Please retry processing after checking the transcript content.'}</p>
+        </div>
+      )}
       {emailDraft && (
         <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-indigo">
           <div className="flex flex-wrap items-start justify-between gap-3">
