@@ -13,10 +13,10 @@ const app = express();
 const uploadAttempts = new Map<string, { count: number; resetAt: number }>();
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 },
+  limits: { fileSize: 4 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    const allowed = ['audio/mpeg', 'audio/mp4', 'audio/webm', 'audio/wav', 'audio/x-m4a', 'text/plain'];
-    cb(null, allowed.includes(file.mimetype) || /\.(mp3|m4a|webm|wav|txt)$/i.test(file.originalname));
+    const isTextFile = file.mimetype === 'text/plain' || /\.txt$/i.test(file.originalname);
+    cb(null, isTextFile);
   }
 });
 const proofUpload = multer({
@@ -34,6 +34,16 @@ const adminEmails = new Set(env.ADMIN_EMAILS.split(',').map((email) => email.tri
 
 const asyncHandler = (handler: AsyncHandler) => (req: express.Request, res: express.Response, next: express.NextFunction) => {
   Promise.resolve(handler(req, res, next)).catch(next);
+};
+
+const meetingUploadMiddleware = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  upload.single('file')(req, res, (error) => {
+    if (!error) return next();
+    if (error instanceof multer.MulterError && error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'Upload a .txt file under 4MB, or paste the transcript text.' });
+    }
+    return res.status(400).json({ error: 'Only .txt transcript files are supported on this Vercel deployment. Paste audio transcripts as text.' });
+  });
 };
 
 function requireAdmin(req: express.Request, res: express.Response, next: express.NextFunction) {
@@ -195,7 +205,7 @@ app.get('/api/usage', requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
-app.post('/api/meetings/upload', upload.single('file'), asyncHandler(async (req, res) => {
+app.post('/api/meetings/upload', meetingUploadMiddleware, asyncHandler(async (req, res) => {
   const authedReq = req as AuthedRequest;
   const title = String(req.body.title || '').trim();
   const transcriptInput = String(req.body.transcript || '').trim();
@@ -209,7 +219,7 @@ app.post('/api/meetings/upload', upload.single('file'), asyncHandler(async (req,
   }
 
   if (!transcriptInput && !req.file) {
-    return res.status(400).json({ error: 'Paste a transcript or upload an audio/text file.' });
+    return res.status(400).json({ error: 'Paste a transcript or upload a .txt file.' });
   }
 
   const monthStart = new Date();

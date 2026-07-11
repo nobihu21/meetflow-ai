@@ -400,6 +400,29 @@ function UploadMeeting({ openMeeting }: { openMeeting: (id: string) => void }) {
     }
   }
 
+  function chooseFile(nextFile: File | null) {
+    setError('');
+    if (!nextFile) {
+      setFile(null);
+      return;
+    }
+
+    const isTextFile = nextFile.name.toLowerCase().endsWith('.txt') || nextFile.type === 'text/plain';
+    if (!isTextFile) {
+      setFile(null);
+      setError('For this Vercel deployment, upload a .txt transcript or paste the transcript text. Audio upload will be added with background storage processing.');
+      return;
+    }
+
+    if (nextFile.size > 4 * 1024 * 1024) {
+      setFile(null);
+      setError('Upload a .txt file under 4MB, or paste the transcript text.');
+      return;
+    }
+
+    setFile(nextFile);
+  }
+
   return (
     <section>
       <div className="rounded-2xl bg-sidebar p-6 text-white shadow-indigo">
@@ -424,9 +447,9 @@ function UploadMeeting({ openMeeting }: { openMeeting: (id: string) => void }) {
           <input className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none focus:border-indigoElectric focus:bg-white" value={participants} onChange={(event) => setParticipants(event.target.value)} placeholder="Add names or emails separated by commas" />
           <label className="mt-5 flex cursor-pointer flex-col items-center rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50 p-8 text-center transition hover:border-indigoElectric hover:bg-indigo-100">
             <FileAudio className="text-indigoElectric" size={34} />
-            <span className="mt-3 font-black text-sidebar">{file ? file.name : 'Upload .txt or audio file'}</span>
-            <span className="mt-1 text-sm leading-6 text-slate-500">Text works on every plan. Audio transcription is available when storage/transcription is configured.</span>
-            <input className="hidden" type="file" accept=".mp3,.m4a,.webm,.wav,.txt,audio/*,text/plain" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+            <span className="mt-3 font-black text-sidebar">{file ? file.name : 'Upload .txt transcript file'}</span>
+            <span className="mt-1 text-sm leading-6 text-slate-500">Paste text or upload a .txt transcript under 4MB. Audio upload will be added with background processing.</span>
+            <input className="hidden" type="file" accept=".txt,text/plain" onChange={(event) => chooseFile(event.target.files?.[0] || null)} />
           </label>
           {busy && <div className="mt-5 flex items-center gap-4 rounded-2xl border-l-4 border-cyanFlash bg-cyan-50 p-4 font-bold text-cyan-900"><Waveform /> Processing with AI</div>}
           {error && <div className="mt-5 rounded-xl bg-red-50 p-4 text-red-700">{error}</div>}
